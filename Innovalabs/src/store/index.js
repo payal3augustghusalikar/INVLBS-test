@@ -31,58 +31,68 @@ export default createStore({
     },
     SET_CURRENT_PAGE(state, page) {
       state.currentPage = page
+    },
+    SET_ITEMS_PER_PAGE(state, itemsPerPage) {
+      state.itemsPerPage = itemsPerPage
     }
   },
   actions: {
-    async fetchUsers({ commit }) {
+    async fetchUsers({ commit }, { page, limit }) {
       try {
-        const response = await axios.get('https://jsonplaceholder.typicode.com/users')
-        commit('SET_USERS', response.data)
-        commit('SET_TOTAL_USERS', response.data.length)
+        const response = await axios.get('https://jsonplaceholder.typicode.com/users', {
+          params: {
+            _page: page,
+            _limit: limit
+          }
+        })
+        const users = response.data
+        const totalUsers = parseInt(response.headers['x-total-count'], 10) // Assuming the API returns total count in headers
+
+        commit('SET_USERS', users)
+        commit('SET_TOTAL_USERS', totalUsers)
       } catch (error) {
         console.error('Failed to fetch users:', error)
       }
     },
-    setPage({ commit }, page) {
+    setPage({ commit, dispatch, state }, page) {
       commit('SET_CURRENT_PAGE', page)
+      dispatch('fetchUsers', { page, limit: state.itemsPerPage })
     },
-    setSearchQuery({ commit }, query) {
+    setItemsPerPage({ commit, dispatch, state }, itemsPerPage) {
+      commit('SET_ITEMS_PER_PAGE', itemsPerPage)
+      dispatch('fetchUsers', { page: state.currentPage, limit: itemsPerPage })
+    },
+    setSearchQuery({ commit, dispatch, state }, query) {
       commit('SET_SEARCH_QUERY', query)
-      commit('SET_CURRENT_PAGE', 1) // Reset to first page on search
+      commit('SET_CURRENT_PAGE', 1)
+      dispatch('fetchUsers', { page: 1, limit: state.itemsPerPage })
     },
-    setFilter({ commit }, { key, value }) {
+    setFilter({ commit, dispatch, state }, { key, value }) {
       commit('SET_FILTER', { key, value })
-      commit('SET_CURRENT_PAGE', 1) // Reset to first page on filter change
+      commit('SET_CURRENT_PAGE', 1)
+      dispatch('fetchUsers', { page: 1, limit: state.itemsPerPage })
     }
   },
   getters: {
     filteredUsers(state) {
       let filtered = state.users.filter((user) => {
-        for (const key in user) {
-          if (Object.prototype.hasOwnProperty.call(user, key)) {
-            const value = user[key].toString().toLowerCase()
-            if (value.includes(state.searchQuery.toLowerCase().trim())) {
-              return true
-            }
-          }
-        }
-        return false
-      })
-
-      return filtered.filter((user) => {
         return Object.entries(state.filters).every(([key, value]) => {
           if (value === '') return true
           return user[key].toString().toLowerCase().includes(value.toLowerCase())
         })
       })
+
+      if (state.searchQuery.trim() !== '') {
+        const query = state.searchQuery.toLowerCase().trim()
+        filtered = filtered.filter((user) => {
+          return Object.values(user).some((value) => value.toString().toLowerCase().includes(query))
+        })
+      }
+
+      return filtered
     },
-    paginatedUsers(state, getters) {
-      const start = (state.currentPage - 1) * state.itemsPerPage
-      const end = start + state.itemsPerPage
-      return getters.filteredUsers.slice(start, end)
-    },
-    totalPages(state, getters) {
-      return Math.ceil(getters.filteredUsers.length / state.itemsPerPage)
+    totalPages(state) {
+      return Math.ceil(state.totalUsers / state.itemsPerPage)
     }
   }
 })

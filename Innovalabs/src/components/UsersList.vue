@@ -34,7 +34,7 @@
       style="margin: 4px"
     />
     <ul class="user-list">
-      <li v-for="user in paginatedUsers" :key="user.id" class="user-item">
+      <li v-for="user in filteredUsers" :key="user.id" class="user-item">
         <p class="user-name">{{ user.name }}</p>
         <p class="user-username"><strong>Username:</strong> {{ user.username }}</p>
         <p class="user-email"><strong>Email:</strong> {{ user.email }}</p>
@@ -45,6 +45,11 @@
       <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
     </div>
     <p>Page {{ currentPage }} of {{ totalPages }}</p>
+    <select v-model="itemsPerPage" @change="onItemsPerPageChange">
+      <option :value="5">5</option>
+      <option :value="10">10</option>
+      <option :value="20">20</option>
+    </select>
   </div>
 </template>
 
@@ -59,11 +64,11 @@ export default {
     }
   },
   computed: {
-    ...mapState(['filters', 'currentPage']),
-    ...mapGetters(['paginatedUsers', 'totalPages'])
+    ...mapState(['filters', 'currentPage', 'itemsPerPage', 'users']),
+    ...mapGetters(['filteredUsers', 'totalPages'])
   },
   methods: {
-    ...mapActions(['fetchUsers', 'setSearchQuery', 'setPage', 'setFilter']),
+    ...mapActions(['fetchUsers', 'setSearchQuery', 'setPage', 'setFilter', 'setItemsPerPage']),
     onSearch() {
       this.setSearchQuery(this.localSearchQuery)
     },
@@ -79,10 +84,13 @@ export default {
       if (this.currentPage < this.totalPages) {
         this.setPage(this.currentPage + 1)
       }
+    },
+    onItemsPerPageChange() {
+      this.setItemsPerPage(this.itemsPerPage)
     }
   },
   created() {
-    this.fetchUsers()
+    this.fetchUsers({ page: this.currentPage, limit: this.itemsPerPage })
   }
 }
 </script>
@@ -145,6 +153,12 @@ button {
   color: white;
 }
 
+select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 20px;
+}
 button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
