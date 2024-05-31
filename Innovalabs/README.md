@@ -1,6 +1,6 @@
 # innovalabs
 
-This template should help get you started developing with Vue 3 in Vite.
+This repository includes basic implementation for child parent communication, fetching api data with pagination, using vuex and form validations and submission.
 
 ## Recommended IDE Setup
 
@@ -33,3 +33,11 @@ npm run build
 ```sh
 npm run lint
 ```
+
+
+### Format code
+
+```sh
+npm run format
+```
+
