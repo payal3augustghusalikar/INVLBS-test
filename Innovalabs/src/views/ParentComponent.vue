@@ -18,8 +18,8 @@
 </template>
 
 <script>
-import ChildComponent from './ChildComponent.vue'
-import ChildComponent2 from './ChildComponent2.vue'
+import ChildComponent from '../components/ChildComponent.vue'
+import ChildComponent2 from '../components/ChildComponent2.vue'
 export default {
   name: 'ParentComponent',
   data() {
